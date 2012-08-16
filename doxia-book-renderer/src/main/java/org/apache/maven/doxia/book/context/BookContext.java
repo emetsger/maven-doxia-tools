@@ -22,6 +22,7 @@ package org.apache.maven.doxia.book.context;
 import org.apache.maven.doxia.book.model.BookModel;
 
 import java.io.File;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
@@ -68,6 +69,9 @@ public class BookContext
         /** The id of the parser. */
         private String parserId;
 
+        /** The ids of sections in the BookFile */
+        private List<String> sectionIds;
+
         /**
          * Constructor.
          *
@@ -98,6 +102,24 @@ public class BookContext
         public String getParserId()
         {
             return parserId;
+        }
+
+        /**
+         * The section ids contained in this BookFile.
+         *
+         * @return List&lt;String> of section identifiers in this BookFile
+         */
+        public List<String> getSectionIds() {
+            return sectionIds;
+        }
+
+        /**
+         * The section ids contained in this BookFile.
+         *
+         * @param sectionIds the section identifiers in this BookFile
+         */
+        public void setSectionIds(List<String> sectionIds) {
+            this.sectionIds = sectionIds;
         }
     }
 
