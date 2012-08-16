@@ -91,6 +91,22 @@ public class DefaultBookDoxia
 
         if ( !validationResult.isAllOk() )
         {
+            if ( !validationResult.getWarnings().isEmpty() )
+            {
+                for ( String warning : validationResult.getWarnings() )
+                {
+                    getLogger().warn( warning );
+                }
+            }
+
+            if ( !validationResult.getErrors().isEmpty() )
+            {
+                for ( String error : validationResult.getErrors() )
+                {
+                    getLogger().error( error );
+                }
+            }
+
             throw new InvalidBookDescriptorException( validationResult );
         }
 
