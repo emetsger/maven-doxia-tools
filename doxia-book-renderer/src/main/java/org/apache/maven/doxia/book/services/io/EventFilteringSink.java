@@ -54,6 +54,48 @@ public class EventFilteringSink extends FilteringSink
         this.requiredAttributes = requiredAttributes;
     }
 
+    /**
+     * The event that this sink is matching.
+     *
+     * @return the event
+     */
+    public DoxiaEvent getEvent()
+    {
+        return event;
+    }
+
+    /**
+     * The attributes that this sink is matching.
+     *
+     * @return the attributes, may be {@code null}
+     */
+    public SinkEventAttributes getRequiredAttributes()
+    {
+        return requiredAttributes;
+    }
+
+    /**
+     * Accepts {@code event} if:
+     * <ul>
+     *     <li>{@code event} is equal to the {@link #getEvent() required event} <em>and</em> the event is accompanied by
+     *         the {@link #getRequiredAttributes() required attributes} (the required attributes and values must be
+     *         contained in {@code eventAttributes}, unless the required attributes are {@code null}).</li>
+     *     <li>{@code event} occurs after the {@link #getEvent() required event} but before the required event has
+     *         been closed</li>
+     *     <li>{@code event} represents the closing of the {@link #getEvent() required event}</li>
+     * </ul>
+     * <p>
+     * <em>Implementation notes:</em>
+     * <p>
+     * The semantics of {@code null} {@link #getRequiredAttributes() required attributes} are that they are not
+     * considered when determining a match (versus the requirement that attributes must not be present when matching an
+     * event).  This implementation does not consider the supplied {@code params} at all.
+     *
+     * @param event           the Doxia event
+     * @param eventAttributes event attributes, may be {@code null}
+     * @param params          event parameters are ignored by this implementation
+     * @return true if the event is accepted, false otherwise.
+     */
     @Override
     protected boolean accept( DoxiaEvent event, SinkEventAttributes eventAttributes, Object... params )
     {
