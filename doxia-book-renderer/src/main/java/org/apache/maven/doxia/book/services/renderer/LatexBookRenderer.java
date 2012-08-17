@@ -20,6 +20,8 @@ package org.apache.maven.doxia.book.services.renderer;
  */
 
 import org.apache.maven.doxia.book.BookDoxiaException;
+import org.apache.maven.doxia.book.services.io.DoxiaEvent;
+import org.apache.maven.doxia.book.services.io.EventFilteringSink;
 import org.apache.maven.doxia.book.services.renderer.latex.LatexBookSink;
 import org.apache.maven.doxia.book.context.BookContext;
 import org.apache.maven.doxia.book.model.BookModel;
@@ -28,6 +30,8 @@ import org.apache.maven.doxia.book.model.Section;
 import org.apache.maven.doxia.parser.manager.ParserNotFoundException;
 import org.apache.maven.doxia.parser.ParseException;
 import org.apache.maven.doxia.Doxia;
+import org.apache.maven.doxia.sink.SinkEventAttributeSet;
+import org.apache.maven.doxia.sink.SinkEventAttributes;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.util.ReaderFactory;
@@ -199,7 +203,7 @@ public class LatexBookRenderer
 
         LatexBookSink sink = new LatexBookSink( writer );
 
-        BookContext.BookFile bookFile = (BookContext.BookFile) context.getFiles().get( section.getId() );
+        BookContext.BookFile bookFile = context.getBookFileForSection( section.getId() );
 
         if ( bookFile == null )
         {
@@ -211,7 +215,16 @@ public class LatexBookRenderer
         try
         {
             reader = ReaderFactory.newReader( bookFile.getFile(), context.getInputEncoding() );
-            doxia.parse( reader, bookFile.getParserId(), sink );
+            if ( bookFile.getSectionIds().contains( section.getId() ) )
+            {
+                SinkEventAttributes requiredAttrs = new SinkEventAttributeSet( new String[] { "id", section.getId() } );
+                doxia.parse( reader, bookFile.getParserId(),
+                        new EventFilteringSink( sink, DoxiaEvent.SECTION, requiredAttrs ) );
+            }
+            else
+            {
+                doxia.parse( reader, bookFile.getParserId(), sink );
+            }
         }
         catch ( ParserNotFoundException e )
         {

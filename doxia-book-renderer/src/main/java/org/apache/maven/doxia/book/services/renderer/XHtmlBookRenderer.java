@@ -25,7 +25,11 @@ import org.apache.maven.doxia.book.BookDoxiaException;
 import org.apache.maven.doxia.book.model.BookModel;
 import org.apache.maven.doxia.book.model.Chapter;
 import org.apache.maven.doxia.book.model.Section;
+import org.apache.maven.doxia.book.services.io.DoxiaEvent;
+import org.apache.maven.doxia.book.services.io.EventFilteringSink;
 import org.apache.maven.doxia.book.services.renderer.xhtml.XhtmlBookSink;
+import org.apache.maven.doxia.sink.SinkEventAttributeSet;
+import org.apache.maven.doxia.sink.SinkEventAttributes;
 import org.apache.maven.doxia.sink.render.RenderingContext;
 import org.apache.maven.doxia.parser.manager.ParserNotFoundException;
 import org.apache.maven.doxia.parser.ParseException;
@@ -165,7 +169,7 @@ public class XHtmlBookRenderer
     {
         sink.section2();
 
-        BookContext.BookFile bookFile = context.getFiles().get( section.getId() );
+        BookContext.BookFile bookFile = context.getBookFileForSection( section.getId() );
 
         if ( bookFile == null )
         {
@@ -176,7 +180,16 @@ public class XHtmlBookRenderer
         try
         {
             reader = ReaderFactory.newReader( bookFile.getFile(), context.getInputEncoding() );
-            doxia.parse( reader, bookFile.getParserId(), sink );
+            if ( bookFile.getSectionIds().contains( section.getId() ) )
+            {
+                SinkEventAttributes requiredAttrs = new SinkEventAttributeSet( new String[] { "id", section.getId() } );
+                doxia.parse( reader, bookFile.getParserId(),
+                        new EventFilteringSink( sink, DoxiaEvent.SECTION, requiredAttrs ) );
+            }
+            else
+            {
+                doxia.parse( reader, bookFile.getParserId(), sink );
+            }
         }
         catch ( ParserNotFoundException e )
         {
