@@ -21,6 +21,8 @@ package org.apache.maven.doxia.book.services.indexer;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.maven.doxia.Doxia;
 import org.apache.maven.doxia.book.BookDoxiaException;
@@ -105,12 +107,12 @@ public class DefaultBookIndexer
     private void indexSection( BookContext bookContext, IndexEntry chapterEntry, Section section )
         throws BookDoxiaException
     {
-        BookContext.BookFile bookFile = (BookContext.BookFile) bookContext.getFiles().get( section.getId() );
+        BookContext.BookFile bookFile = bookContext.getBookFileForSection( section.getId() );
 
         if ( bookFile == null )
         {
             throw new BookDoxiaException( "No document that matches section with id="
-                        + section.getId() + "." );
+                    + section.getId() + "." );
         }
 
         // ----------------------------------------------------------------------
@@ -128,17 +130,17 @@ public class DefaultBookIndexer
         catch ( ParserNotFoundException e )
         {
             throw new BookDoxiaException( "Parser not found: "
-                        + bookFile.getParserId() + ".", e );
+                    + bookFile.getParserId() + ".", e );
         }
         catch ( ParseException e )
         {
             throw new BookDoxiaException( "Error while parsing document: "
-                        + bookFile.getFile().getAbsolutePath() + ".", e );
+                    + bookFile.getFile().getAbsolutePath() + ".", e );
         }
         catch ( FileNotFoundException e )
         {
             throw new BookDoxiaException( "Could not find document: "
-                        + bookFile.getFile().getAbsolutePath() + ".", e );
+                    + bookFile.getFile().getAbsolutePath() + ".", e );
         }
 
         sectionEntry.setTitle( sink.getTitle() );

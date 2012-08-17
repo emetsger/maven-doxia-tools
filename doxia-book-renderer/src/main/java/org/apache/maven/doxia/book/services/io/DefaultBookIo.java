@@ -25,6 +25,10 @@ import org.apache.maven.doxia.book.BookDoxiaException;
 import org.apache.maven.doxia.book.context.BookContext;
 import org.apache.maven.doxia.module.site.SiteModule;
 import org.apache.maven.doxia.module.site.manager.SiteModuleManager;
+import org.apache.maven.doxia.parser.ParseException;
+import org.apache.maven.doxia.parser.Parser;
+import org.apache.maven.doxia.parser.manager.ParserManager;
+import org.apache.maven.doxia.parser.manager.ParserNotFoundException;
 import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.ReaderFactory;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
@@ -32,9 +36,12 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.File;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
@@ -53,6 +60,9 @@ public class DefaultBookIo
 {
     @Requirement
     private SiteModuleManager siteModuleManager;
+
+    @Requirement
+    private ParserManager parserManager;
 
     // -----------------------------------------------------------------------
     // DefaultBookIo Implementation
@@ -86,7 +96,8 @@ public class DefaultBookIo
     public void loadFiles( BookContext context, List<File> files )
     {
         // ----------------------------------------------------------------------
-        // Find all the files, map the file names to ids
+        // Find all the files, identify the sections in the files, and map the file names to ids (which are
+        // implicit section ids)
         // ----------------------------------------------------------------------
 
         Collection<SiteModule> siteModules = siteModuleManager.getSiteModules();
@@ -99,20 +110,40 @@ public class DefaultBookIo
 
             String parserId = siteModule.getParserId();
 
-            for ( File file : files )
+            for ( File file : filesForModule( siteModule, files ) )
             {
                 String name = file.getName();
 
                 String path = file.getAbsolutePath();
 
+                // The sections identified in the file
+                final List<String> sectionIds = new ArrayList<String>();
+
+                try
+                {
+                    // Parse the file, collecting the section events
+                    Parser parser = parserManager.getParser( parserId );
+                    SectionIdentifiersSink sectionSink = new SectionIdentifiersSink();
+                    parser.parse( new FileReader( file ), sectionSink );
+                    sectionIds.addAll( sectionSink.getSectionIds() );
+                }
+                catch ( Exception e )
+                {
+                    String msg = "Error parsing file " + file + " with parser " + parserId;
+                    getLogger().error( msg, e );
+                    throw new RuntimeException( msg, e );
+                }
+
                 // first check if the file path contains one of the recognized source dir identifiers
                 // (there's trouble if a pathname contains 2 identifiers), then match file extensions (not unique).
 
+                final BookContext.BookFile bookFile = new BookContext.BookFile( file, parserId );
+                bookFile.setSectionIds( sectionIds );
                 if ( path.indexOf( sourceDirectory ) != -1 )
                 {
                     name = name.substring( 0, name.length() - extension.length() - 1 );
 
-                    context.getFiles().put( name, new BookContext.BookFile( file, parserId ) );
+                    context.getFiles().put( name, bookFile);
                 }
                 else if ( name.endsWith( extension ) )
                 {
@@ -121,7 +152,7 @@ public class DefaultBookIo
                     // don't overwrite if it's there already
                     if ( !context.getFiles().containsKey( name ) )
                     {
-                        context.getFiles().put( name, new BookContext.BookFile( file, parserId ) );
+                        context.getFiles().put( name, bookFile);
                     }
                 }
             }
@@ -136,9 +167,47 @@ public class DefaultBookIo
             for ( Map.Entry<String, BookContext.BookFile> entry : map.entrySet() )
             {
                 BookContext.BookFile file = entry.getValue();
-
-                getLogger().debug( " " + entry.getKey() + "=" + file.getFile() + ", parser: " + file.getParserId() );
+                for (String sectionId : file.getSectionIds() )
+                {
+                    getLogger().debug( " " + sectionId + "=" + file.getFile() + ", parser: " + file.getParserId() );
+                }
             }
         }
+    }
+
+    /**
+     * Selects files from a list of candidates that can be parsed by the supplied {@code siteModule}.  Uses the
+     * site module's source directory and file extension to select files.
+     *
+     * @param siteModule the {@code SiteModule}
+     * @param candidateFiles a List of files, some of which may be able to be parsed by {@code siteModule}
+     * @return the files that can be parsed by {@code siteModule}.  May be empty, but never {@code null}.
+     */
+    private List<File> filesForModule( SiteModule siteModule, List<File> candidateFiles )
+    {
+        String sourceDir = siteModule.getSourceDirectory();
+        String ext = siteModule.getExtension();
+
+        List<File> moduleFiles = new ArrayList<File>();
+
+        for ( File candidate : candidateFiles )
+        {
+            String dir = candidate.getParent();
+            String name = candidate.getName();
+
+            if ( !dir.contains( sourceDir ) )
+            {
+                continue;
+            }
+
+            if ( !name.endsWith( ext ) )
+            {
+                continue;
+            }
+
+            moduleFiles.add( candidate );
+        }
+
+        return moduleFiles;
     }
 }

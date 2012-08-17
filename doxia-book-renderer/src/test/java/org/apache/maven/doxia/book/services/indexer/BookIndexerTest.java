@@ -45,7 +45,7 @@ public class BookIndexerTest
 
         BookContext context = new BookContext();
 
-        io.loadFiles( context, FileUtils.getFiles( getTestFile( "src/test/resources/book-1" ), "*.apt", "" ) );
+        io.loadFiles( context, FileUtils.getFiles( getTestFile( "src/test/resources/book-1" ), "**/*.apt", "" ) );
 
         indexer.indexBook( book, context );
 

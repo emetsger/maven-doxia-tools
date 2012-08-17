@@ -277,4 +277,39 @@ public class BookContext
     {
         this.outputEncoding = outputEncoding;
     }
+
+    /**
+     * Attempt to find the {@code BookFile} in this {@code BookContext} that contains the identified section.  If the
+     * section cannot be found, {@code null} is returned.
+     * <p/>
+     * This method considers two data structures when searching for section identifiers.  The first is the explicit set
+     * of {@link BookContext.BookFile#getSectionIds() section identifers} that may have been set on the
+     * {@code BookFile}.  To maintain previous behavior, the names of the files are also considered as section
+     * identifiers, so the {@link #getFiles() file map} is consulted as well.
+     * <p/>
+     * Note that if multiple BookFiles contain the same section id, only the first BookFile found to contain the section
+     * id is returned.
+     * 
+     * @param sectionId the section identifier
+     * @return the {@code BookFile} that contains the section, or {@code null}
+     */
+    public BookFile getBookFileForSection( String sectionId )
+    {
+        BookContext.BookFile bookFile = null;
+        for ( BookContext.BookFile bf : getFiles().values() )
+        {
+            if ( bf.getSectionIds().contains( sectionId ) )
+            {
+                bookFile = bf;
+                break;
+            }
+        }
+
+        if ( bookFile == null && getFiles().containsKey( sectionId ) )
+        {
+            bookFile = getFiles().get( sectionId );
+        }
+
+        return bookFile;
+    }
 }
