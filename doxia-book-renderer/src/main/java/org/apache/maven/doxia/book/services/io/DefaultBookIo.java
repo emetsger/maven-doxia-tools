@@ -64,6 +64,18 @@ public class DefaultBookIo
     @Requirement
     private ParserManager parserManager;
 
+    /**
+     * Package-private constructor for unit tests.
+     *
+     * @param parserManager the ParserManager
+     * @param siteModuleManager the SiteModuleManager
+     */
+    DefaultBookIo( ParserManager parserManager, SiteModuleManager siteModuleManager )
+    {
+        this.parserManager = parserManager;
+        this.siteModuleManager = siteModuleManager;
+    }
+
     // -----------------------------------------------------------------------
     // DefaultBookIo Implementation
     // -----------------------------------------------------------------------
@@ -110,6 +122,8 @@ public class DefaultBookIo
 
             String parserId = siteModule.getParserId();
 
+            System.err.println( "Searching for files for " + parserId );
+
             for ( File file : filesForModule( siteModule, files ) )
             {
                 String name = file.getName();
@@ -121,6 +135,7 @@ public class DefaultBookIo
 
                 try
                 {
+                    System.err.println( "Parsing file " + file );
                     // Parse the file, collecting the section events
                     Parser parser = parserManager.getParser( parserId );
                     SectionIdentifiersSink sectionSink = new SectionIdentifiersSink();
@@ -142,19 +157,19 @@ public class DefaultBookIo
                 if ( path.indexOf( sourceDirectory ) != -1 )
                 {
                     name = name.substring( 0, name.length() - extension.length() - 1 );
-
-                    context.getFiles().put( name, bookFile);
                 }
                 else if ( name.endsWith( extension ) )
                 {
                     name = name.substring( 0, name.length() - extension.length() - 1 );
-
-                    // don't overwrite if it's there already
-                    if ( !context.getFiles().containsKey( name ) )
-                    {
-                        context.getFiles().put( name, bookFile);
-                    }
                 }
+
+                // don't overwrite if it's there already
+                if ( !context.getFiles().containsKey( name ) )
+                {
+                    System.err.println( "Add book file to context under " + name);
+                    context.getFiles().put( name, bookFile );
+                }
+
             }
         }
 
