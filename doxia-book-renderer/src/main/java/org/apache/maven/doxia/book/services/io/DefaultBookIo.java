@@ -122,8 +122,6 @@ public class DefaultBookIo
 
             String parserId = siteModule.getParserId();
 
-            System.err.println( "Searching for files for " + parserId );
-
             for ( File file : filesForModule( siteModule, files ) )
             {
                 String name = file.getName();
@@ -135,7 +133,6 @@ public class DefaultBookIo
 
                 try
                 {
-                    System.err.println( "Parsing file " + file );
                     // Parse the file, collecting the section events
                     Parser parser = parserManager.getParser( parserId );
                     SectionIdentifiersSink sectionSink = new SectionIdentifiersSink();
@@ -166,7 +163,6 @@ public class DefaultBookIo
                 // don't overwrite if it's there already
                 if ( !context.getFiles().containsKey( name ) )
                 {
-                    System.err.println( "Add book file to context under " + name);
                     context.getFiles().put( name, bookFile );
                 }
 
